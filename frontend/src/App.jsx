@@ -12,7 +12,7 @@ function App() {
   return (
     <ClerkProvider publishableKey={clerkPubKey}>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="app-container min-h-screen">
           <Routes>
             {/* Public route */}
             <Route path="/login" element={<Login />} />
