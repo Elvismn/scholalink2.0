@@ -3,10 +3,9 @@ const mongoose = require('mongoose');
 const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db");
-// const { clerkMiddleware, requireAuth } = require('@clerk/express');
-const errorHandler = require('./src/middleware/errorHandler'); // ✅ UNCOMMENTED
-const securityMiddleware = require('./src/middleware/security'); // ✅ UNCOMMENTED
-const customAuth = require("./src/middleware/customAuth")
+const errorHandler = require('./src/middleware/errorHandler');
+const securityMiddleware = require('./src/middleware/security');
+const customAuth = require("./src/middleware/customAuth");
 
 // Import Routes
 const courseRoutes = require('./src/routes/courseRoutes');
@@ -24,14 +23,23 @@ dotenv.config();
 
 const app = express();
 
-// Security middleware ✅ UNCOMMENTED
+app.use(express.json())
+
+app.use((req, res, next) => {
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('📨 Incoming Request:', req.method, req.url);
+    console.log('📦 Request Body:', req.body);
+    console.log('📋 Headers:', req.headers['content-type']);
+  }
+  next();
+});
+// Security middleware
 app.use(securityMiddleware);
 
 // Connect to DB first
 connectDB()
   .then(() => {
     console.log(`MongoDB Connected`);
-
     app.listen(process.env.PORT || 5000, () =>
       console.log(`Server running on port ${process.env.PORT || 5000}`)
     );
@@ -39,11 +47,12 @@ connectDB()
   .catch((err) => console.error(err));
 
 // Middleware
-app.use(cors());
-app.use(express.json());
-
-// // Clerk middleware - attaches auth to req.auth
-// app.use(clerkMiddleware());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 // Public health check route
 app.get("/health", (req, res) => {
@@ -54,18 +63,13 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Mount PROTECTED routes - require authentication
+// Mount PROTECTED routes with customAuth
 app.use('/api/courses', customAuth, courseRoutes);
 app.use('/api/curriculums', customAuth, curriculumRoutes);
 app.use('/api/staff', customAuth, staffRoutes);
 app.use('/api/clubs', customAuth, clubRoutes);
 app.use('/api/classrooms', customAuth, classroomRoutes);
-// Temporary debug middleware to see what's happening
-app.use('/api/parents', (req, res, next) => {
-  console.log('🔐 Auth check for /api/parents');
-  console.log('Headers:', req.headers);
-  next();
-}, customAuth, parentRoutes);
+app.use('/api/parents', customAuth, parentRoutes);
 app.use('/api/departments', customAuth, departmentRoutes);
 app.use('/api/stakeholders', customAuth, stakeholderRoutes);
 app.use('/api/inventory', customAuth, inventoryRoutes);
@@ -76,7 +80,7 @@ app.get("/", (req, res) => {
   res.send("Scholalink 2.0 Backend API is running...");
 });
 
-// Error handler must be last ✅ UNCOMMENTED
+// Error handler must be last
 app.use(errorHandler);
 
 // 404 handler - MUST BE VERY LAST
