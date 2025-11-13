@@ -7,7 +7,6 @@ const {
   updateStaff,
   deleteStaff,
 } = require('../controllers/staffController');
-
 // GET all
 router.get('/', getStaff);
 

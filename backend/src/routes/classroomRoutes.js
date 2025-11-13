@@ -8,19 +8,19 @@ const {
   deleteClassroom,
 } = require('../controllers/classroomController');
 
-// GET all
+// GET all classrooms
 router.get('/', getClassrooms);
 
-// GET one
+// GET one classroom by ID
 router.get('/:id', getClassroom);
 
-// POST create
+// POST create classroom
 router.post('/', createClassroom);
 
-// PUT update
+// PUT update classroom by ID
 router.put('/:id', updateClassroom);
 
-// DELETE remove
+// DELETE classroom by ID
 router.delete('/:id', deleteClassroom);
 
 module.exports = router;
