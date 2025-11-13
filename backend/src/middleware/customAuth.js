@@ -1,26 +1,59 @@
-// // Add this to your server.js or create a new middleware file
-// const customAuth = (req, res, next) => {
-//   // Check if user is authenticated via Clerk
-//   if (req.auth && req.auth.userId) {
-//     // User is authenticated, proceed to the route
-//     return next();
-//   } else {
-//     // User is not authenticated, send proper 401
-//     return res.status(401).json({ 
-//       error: 'Unauthorized',
-//       message: 'Authentication required' 
-//     });
-//   }
-// };
+// backend/src/middleware/customAuth.js
+const { clerkClient } = require('@clerk/clerk-sdk-node');
 
-// module.exports = customAuth;
+const customAuth = async (req, res, next) => {
+  try {
+    console.log('🔐 Custom Auth - Checking authentication...');
+    
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ No Bearer token found');
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'No authentication token provided'
+      });
+    }
 
-// backend/src/middleware/customAuth.js - Development version
-const customAuth = (req, res, next) => {
-  console.log('🔐 Custom Auth - DEVELOPMENT MODE: Allowing all requests');
-  next(); // Allow all requests during development
-  
-  // For production, you'll replace this with real auth logic
+    const token = authHeader.replace('Bearer ', '');
+    
+    if (!token) {
+      console.log('❌ Empty token');
+      return res.status(401).json({
+        error: 'Unauthorized', 
+        message: 'Invalid token format'
+      });
+    }
+
+    console.log('🔐 Token found, verifying with Clerk...');
+
+    try {
+      // Verify the token using Clerk
+      const decoded = await clerkClient.verifyToken(token);
+      console.log('✅ Token verified successfully for user:', decoded.sub);
+      
+      // Attach the decoded token to req.auth
+      req.auth = {
+        userId: decoded.sub,
+        sessionId: decoded.sid,
+        ...decoded
+      };
+      
+      next();
+    } catch (error) {
+      console.log('❌ Token verification failed:', error.message);
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'Invalid or expired token'
+      });
+    }
+  } catch (error) {
+    console.error('🔥 Auth middleware error:', error);
+    return res.status(500).json({
+      error: 'Authentication error',
+      message: 'Internal server error during authentication'
+    });
+  }
 };
 
 module.exports = customAuth;
