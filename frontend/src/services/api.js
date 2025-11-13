@@ -1,3 +1,4 @@
+// src/services/api.js
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -10,9 +11,21 @@ const api = axios.create({
   },
 });
 
+// Store the current token (we'll set this from components)
+let currentToken = null;
+
+// Function to set the token (call this when user logs in)
+export const setAuthToken = (token) => {
+  currentToken = token;
+  console.log('🔐 Token set in API service');
+};
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
-  async (config) => {
+  (config) => {
+    if (currentToken) {
+      config.headers.Authorization = `Bearer ${currentToken}`;
+    }
     return config;
   },
   (error) => {
@@ -25,198 +38,93 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API Error:', error);
+    if (error.response?.status === 401) {
+      console.log('Authentication required');
+      // You might want to redirect to login here
+    }
     return Promise.reject(error);
   }
 );
 
-// API methods for Parents
+
 export const parentAPI = {
-  getAll: (token) => api.get('/parents', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/parents/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/parents', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/parents/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/parents/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/parents'),
+  getById: (id) => api.get(`/parents/${id}`),
+  create: (data) => api.post('/parents', data),
+  update: (id, data) => api.put(`/parents/${id}`, data),
+  delete: (id) => api.delete(`/parents/${id}`),
 };
 
-// API methods for Staff
 export const staffAPI = {
-  getAll: (token) => api.get('/staff', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/staff/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/staff', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/staff/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/staff/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/staff'),
+  getById: (id) => api.get(`/staff/${id}`),
+  create: (data) => api.post('/staff', data),
+  update: (id, data) => api.put(`/staff/${id}`, data),
+  delete: (id) => api.delete(`/staff/${id}`),
 };
 
-// API methods for Courses
 export const courseAPI = {
-  getAll: (token) => api.get('/courses', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/courses/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/courses', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/courses/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/courses/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/courses'),
+  getById: (id) => api.get(`/courses/${id}`),
+  create: (data) => api.post('/courses', data),
+  update: (id, data) => api.put(`/courses/${id}`, data),
+  delete: (id) => api.delete(`/courses/${id}`),
 };
 
-// API methods for Curriculum
 export const curriculumAPI = {
-  getAll: (token) => api.get('/curriculums', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/curriculums/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/curriculums', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/curriculums/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/curriculums/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/curriculums'),
+  getById: (id) => api.get(`/curriculums/${id}`),
+  create: (data) => api.post('/curriculums', data),
+  update: (id, data) => api.put(`/curriculums/${id}`, data),
+  delete: (id) => api.delete(`/curriculums/${id}`),
 };
 
-// API methods for Classrooms
 export const classroomAPI = {
-  getAll: (token) => api.get('/classrooms', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/classrooms/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/classrooms', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/classrooms/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/classrooms/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/classrooms'),
+  getById: (id) => api.get(`/classrooms/${id}`),
+  create: (data) => api.post('/classrooms', data),
+  update: (id, data) => api.put(`/classrooms/${id}`, data),
+  delete: (id) => api.delete(`/classrooms/${id}`),
 };
 
-// API methods for Clubs
 export const clubAPI = {
-  getAll: (token) => api.get('/clubs', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/clubs/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/clubs', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/clubs/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/clubs/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/clubs'),
+  getById: (id) => api.get(`/clubs/${id}`),
+  create: (data) => api.post('/clubs', data),
+  update: (id, data) => api.put(`/clubs/${id}`, data),
+  delete: (id) => api.delete(`/clubs/${id}`),
 };
 
-// API methods for Departments
 export const departmentAPI = {
-  getAll: (token) => api.get('/departments', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/departments/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/departments', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/departments/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/departments/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/departments'),
+  getById: (id) => api.get(`/departments/${id}`),
+  create: (data) => api.post('/departments', data),
+  update: (id, data) => api.put(`/departments/${id}`, data),
+  delete: (id) => api.delete(`/departments/${id}`),
 };
 
-// API methods for Stakeholders
 export const stakeholderAPI = {
-  getAll: (token) => api.get('/stakeholders', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/stakeholders/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/stakeholders', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/stakeholders/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/stakeholders/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/stakeholders'),
+  getById: (id) => api.get(`/stakeholders/${id}`),
+  create: (data) => api.post('/stakeholders', data),
+  update: (id, data) => api.put(`/stakeholders/${id}`, data),
+  delete: (id) => api.delete(`/stakeholders/${id}`),
 };
 
-// API methods for Inventory
 export const inventoryAPI = {
-  getAll: (token) => api.get('/inventory', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/inventory/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/inventory', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/inventory/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/inventory/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/inventory'),
+  getById: (id) => api.get(`/inventory/${id}`),
+  create: (data) => api.post('/inventory', data),
+  update: (id, data) => api.put(`/inventory/${id}`, data),
+  delete: (id) => api.delete(`/inventory/${id}`),
 };
 
-// API methods for Students
 export const studentAPI = {
-  getAll: (token) => api.get('/students', {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  getById: (id, token) => api.get(`/students/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  create: (data, token) => api.post('/students', data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  update: (id, data, token) => api.put(`/students/${id}`, data, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
-  delete: (id, token) => api.delete(`/students/${id}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  }),
+  getAll: () => api.get('/students'),
+  getById: (id) => api.get(`/students/${id}`),
+  create: (data) => api.post('/students', data),
+  update: (id, data) => api.put(`/students/${id}`, data),
+  delete: (id) => api.delete(`/students/${id}`),
 };
 
 export default api;

@@ -85,7 +85,7 @@ const Dashboard = () => {
               <span className="hidden md:inline">School Management System</span>
             </div>
             <div className="flex items-center space-x-4">
-              <span>{new Date().getFullYear()} • All rights reserved</span>
+              <span>{new Date().getFullYear()} © All rights reserved</span>
             </div>
           </div>
         </footer>
