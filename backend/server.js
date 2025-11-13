@@ -18,6 +18,7 @@ const parentRoutes = require('./src/routes/parentRoutes');
 const departmentRoutes = require('./src/routes/departmentRoutes');
 const stakeholderRoutes = require('./src/routes/stakeholderRoutes');
 const inventoryRoutes = require('./src/routes/inventoryRoutes');
+const studentRoutes = require('./src/routes/studentRoutes');
 
 dotenv.config();
 
@@ -68,6 +69,7 @@ app.use('/api/parents', (req, res, next) => {
 app.use('/api/departments', customAuth, departmentRoutes);
 app.use('/api/stakeholders', customAuth, stakeholderRoutes);
 app.use('/api/inventory', customAuth, inventoryRoutes);
+app.use('/api/students', customAuth, studentRoutes);
 
 // ✅ ROOT ROUTE 
 app.get("/", (req, res) => {

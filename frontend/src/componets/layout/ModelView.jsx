@@ -8,11 +8,12 @@ import DepartmentsView from '../models/DepartmentsView';
 import StakeholdersView from '../models/StakeholdersView';
 import InventoryView from '../models/InventoryView';
 import CurriculumView from '../models/CurriculumView';
-
+import StudentsView from '../models/StudentsView';
 const ModelView = ({ model }) => {
   const renderModelContent = () => {
     switch (model) {
       case 'parents': return <ParentsView />;
+      case 'students': return <StudentsView/>
       case 'staff': return <StaffView />;
       case 'courses': return <CoursesView />;
       case 'classrooms': return <ClassroomsView />;

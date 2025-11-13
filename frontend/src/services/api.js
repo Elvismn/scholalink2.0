@@ -200,4 +200,23 @@ export const inventoryAPI = {
   }),
 };
 
+// API methods for Students
+export const studentAPI = {
+  getAll: (token) => api.get('/students', {
+    headers: { Authorization: `Bearer ${token}` }
+  }),
+  getById: (id, token) => api.get(`/students/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  }),
+  create: (data, token) => api.post('/students', data, {
+    headers: { Authorization: `Bearer ${token}` }
+  }),
+  update: (id, data, token) => api.put(`/students/${id}`, data, {
+    headers: { Authorization: `Bearer ${token}` }
+  }),
+  delete: (id, token) => api.delete(`/students/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  }),
+};
+
 export default api;
