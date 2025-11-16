@@ -219,14 +219,14 @@ The application uses Tailwind CSS for utility-first styling, combined with Radix
 
 ## Screenshots
 
-### Screenshot 1
+### A landing page on the frontend app
 ![A landing page on the frontend app](src/assets/landingpage.png)
 
-### Screenshot 2
+### A parent control Module for Demostration
 ![A parent control Module for Demostration](src/assets/ParentModule.png)
 
-### Screenshot 3
+### Clerk Account Control
 ![Clerk Account Control](src/assets/Accountcontrol.png)
 
-### Screenshot 4
+### Basic Create page
 ![Basic Create page](src/assets/Appendpage.png)
