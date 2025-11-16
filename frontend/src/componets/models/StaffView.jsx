@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/clerk-react';
+// Updated StaffView.jsx
+import React, { useState, useEffect, useMemo } from 'react';
 import { staffAPI } from '../../services/api';
+import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
-const StaffView = () => {
+const StaffView = ({ searchTerm, searchResults }) => {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,14 +18,19 @@ const StaffView = () => {
     email: ''
   });
 
-  const { getToken } = useAuth();
+  // Filter staff based on search term
+  const filteredStaff = useMemo(() => {
+    if (!searchTerm) return staff;
+    
+    const searchableFields = getSearchableFields('staff');
+    return searchData(staff, searchTerm, searchableFields);
+  }, [staff, searchTerm]);
 
   // Fetch all staff
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
-      const response = await staffAPI.getAll(token);
+      const response = await staffAPI.getAll();
       setStaff(response.data);
     } catch (err) {
       setError('Failed to fetch staff');
@@ -53,14 +59,12 @@ const StaffView = () => {
     setLoading(true);
     
     try {
-      const token = await getToken();
-
       if (editingStaff) {
         // Update existing staff
-        await staffAPI.update(editingStaff._id, formData, token);
+        await staffAPI.update(editingStaff._id, formData);
       } else {
         // Create new staff
-        await staffAPI.create(formData, token);
+        await staffAPI.create(formData);
       }
 
       await fetchStaff(); // Refresh the list
@@ -92,8 +96,7 @@ const StaffView = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this staff member?')) {
       try {
-        const token = await getToken();
-        await staffAPI.delete(id, token);
+        await staffAPI.delete(id);
         await fetchStaff(); // Refresh the list
       } catch (err) {
         setError('Failed to delete staff member');
@@ -121,13 +124,25 @@ const StaffView = () => {
     setIsModalOpen(true);
   };
 
+  // Use filtered staff for display
+  const displayStaff = searchTerm ? filteredStaff : staff;
+
   return (
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Staff Management</h2>
-          <p className="text-gray-600">Manage staff information and roles</p>
+          <p className="text-gray-600">
+            {searchTerm ? (
+              <span>
+                Showing {filteredStaff.length} of {staff.length} staff members
+                {searchTerm && ` for "${searchTerm}"`}
+              </span>
+            ) : (
+              `Manage staff information and roles`
+            )}
+          </p>
         </div>
         <button
           onClick={openCreateModal}
@@ -136,6 +151,22 @@ const StaffView = () => {
           <span>+ Add New Staff</span>
         </button>
       </div>
+
+      {/* Search Status */}
+      {searchTerm && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-blue-700">
+                Searching for: <strong>"{searchTerm}"</strong> - Found {filteredStaff.length} results
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Display */}
       {error && (
@@ -155,7 +186,7 @@ const StaffView = () => {
       {/* Staff Grid */}
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {staff.map((staffMember) => (
+          {displayStaff.map((staffMember) => (
             <div key={staffMember._id} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">{staffMember.name}</h3>
@@ -221,17 +252,26 @@ const StaffView = () => {
       )}
 
       {/* Empty State */}
-      {!loading && staff.length === 0 && (
+      {!loading && displayStaff.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">👨‍🏫</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No staff members yet</h3>
-          <p className="text-gray-500 mb-4">Get started by adding your first staff member</p>
-          <button
-            onClick={openCreateModal}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Add First Staff
-          </button>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {searchTerm ? 'No staff members found' : 'No staff members yet'}
+          </h3>
+          <p className="text-gray-500 mb-4">
+            {searchTerm 
+              ? `No staff members found for "${searchTerm}". Try a different search term.`
+              : 'Get started by adding your first staff member'
+            }
+          </p>
+          {!searchTerm && (
+            <button
+              onClick={openCreateModal}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Add First Staff
+            </button>
+          )}
         </div>
       )}
 

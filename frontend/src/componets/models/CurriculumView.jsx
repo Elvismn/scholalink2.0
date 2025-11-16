@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { curriculumAPI } from '../../services/api';
+import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
-const CurriculumView = () => {
+const CurriculumView = ({ searchTerm, searchResults }) => {
   const [curriculums, setCurriculums] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,6 +17,15 @@ const CurriculumView = () => {
   });
 
   const { getToken } = useAuth();
+
+  // Filter curriculums based on search term
+  const filteredCurriculums = useMemo(() => {
+    if (!searchTerm) return curriculums;
+    
+    // Use custom searchable fields that match your actual data structure
+    const searchableFields = ['title', 'academicYear', 'subjects', 'description'];
+    return searchData(curriculums, searchTerm, searchableFields);
+  }, [curriculums, searchTerm]);
 
   const fetchCurriculums = async () => {
     setLoading(true);
@@ -32,6 +42,17 @@ const CurriculumView = () => {
   };
 
   useEffect(() => { fetchCurriculums(); }, []);
+
+  // Debug search with actual field names
+  useEffect(() => {
+    console.log('🔍 Curriculum Search Debug:', {
+      searchTerm,
+      curriculumsCount: curriculums.length,
+      filteredCount: filteredCurriculums.length,
+      sampleCurriculum: curriculums[0] || 'No data',
+      searchableFields: ['title', 'academicYear', 'subjects', 'description']
+    });
+  }, [searchTerm, curriculums, filteredCurriculums]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -129,17 +150,45 @@ const CurriculumView = () => {
     setIsModalOpen(true);
   };
 
+  // Use filtered curriculums for display
+  const displayCurriculums = searchTerm ? filteredCurriculums : curriculums;
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Curriculum Management</h2>
-          <p className="text-gray-600">Manage academic curriculum and subjects</p>
+          <p className="text-gray-600">
+            {searchTerm ? (
+              <span>
+                Showing {filteredCurriculums.length} of {curriculums.length} curriculums
+                {searchTerm && ` for "${searchTerm}"`}
+              </span>
+            ) : (
+              'Manage academic curriculum and subjects'
+            )}
+          </p>
         </div>
         <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
           + Add New Curriculum
         </button>
       </div>
+
+      {/* Search Status */}
+      {searchTerm && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-blue-700">
+                Searching for: <strong>"{searchTerm}"</strong> - Found {filteredCurriculums.length} results
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
 
@@ -152,7 +201,7 @@ const CurriculumView = () => {
 
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {curriculums.map((curriculum) => (
+          {displayCurriculums.map((curriculum) => (
             <div key={curriculum._id} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">{curriculum.title}</h3>
@@ -196,14 +245,23 @@ const CurriculumView = () => {
         </div>
       )}
 
-      {!loading && curriculums.length === 0 && (
+      {!loading && displayCurriculums.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">📋</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No curriculums yet</h3>
-          <p className="text-gray-500 mb-4">Get started by adding your first curriculum</p>
-          <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            Add First Curriculum
-          </button>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {searchTerm ? 'No curriculums found' : 'No curriculums yet'}
+          </h3>
+          <p className="text-gray-500 mb-4">
+            {searchTerm 
+              ? `No curriculums found for "${searchTerm}". Try a different search term.`
+              : 'Get started by adding your first curriculum'
+            }
+          </p>
+          {!searchTerm && (
+            <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+              Add First Curriculum
+            </button>
+          )}
         </div>
       )}
 

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/clerk-react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { parentAPI } from '../../services/api';
+import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
-const ParentsView = () => {
+const ParentsView = ({ searchTerm, searchResults }) => {
   const [parents, setParents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,14 +16,19 @@ const ParentsView = () => {
     children: ['']
   });
 
-  const { getToken } = useAuth();
+  // Filter parents based on search term 
+  const filteredParents = useMemo(() => {
+    if (!searchTerm) return parents;
+    
+    const searchableFields = getSearchableFields('parents');
+    return searchData(parents, searchTerm, searchableFields);
+  }, [parents, searchTerm]);
 
-  // Fetch all parents
+  // Fetch all parents 
   const fetchParents = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
-      const response = await parentAPI.getAll(token);
+      const response = await parentAPI.getAll();
       setParents(response.data);
     } catch (err) {
       setError('Failed to fetch parents');
@@ -36,6 +41,16 @@ const ParentsView = () => {
   useEffect(() => {
     fetchParents();
   }, []);
+
+  // Debug search 
+  useEffect(() => {
+    console.log('🔍 Parents Search Debug:', {
+      searchTerm,
+      parentsCount: parents.length,
+      filteredCount: filteredParents.length,
+      searchableFields: getSearchableFields('parents')
+    });
+  }, [searchTerm, parents, filteredParents]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -72,13 +87,12 @@ const ParentsView = () => {
     }));
   };
 
-  // Submit form (create or update)
+  // Submit form (create or update) - EXACT SAME PATTERN AS STUDENTSVIEW
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
     try {
-      const token = await getToken();
       const dataToSend = {
         ...formData,
         children: formData.children.filter(child => child.trim() !== '')
@@ -86,10 +100,10 @@ const ParentsView = () => {
 
       if (editingParent) {
         // Update existing parent
-        await parentAPI.update(editingParent._id, dataToSend, token);
+        await parentAPI.update(editingParent._id, dataToSend);
       } else {
         // Create new parent
-        await parentAPI.create(dataToSend, token);
+        await parentAPI.create(dataToSend);
       }
 
       await fetchParents(); // Refresh the list
@@ -116,12 +130,11 @@ const ParentsView = () => {
     setIsModalOpen(true);
   };
 
-  // Delete parent
+  // Delete parent - EXACT SAME PATTERN AS STUDENTSVIEW
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this parent?')) {
       try {
-        const token = await getToken();
-        await parentAPI.delete(id, token);
+        await parentAPI.delete(id);
         await fetchParents(); // Refresh the list
       } catch (err) {
         setError('Failed to delete parent');
@@ -148,13 +161,25 @@ const ParentsView = () => {
     setIsModalOpen(true);
   };
 
+  // Use filtered parents for display - EXACT SAME PATTERN AS STUDENTSVIEW
+  const displayParents = searchTerm ? filteredParents : parents;
+
   return (
     <div className="p-6">
-      {/* Header */}
+      {/* Header - EXACT SAME PATTERN AS STUDENTSVIEW */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Parents Management</h2>
-          <p className="text-gray-600">Manage parent information and contacts</p>
+          <p className="text-gray-600">
+            {searchTerm ? (
+              <span>
+                Showing {filteredParents.length} of {parents.length} parents
+                {searchTerm && ` for "${searchTerm}"`}
+              </span>
+            ) : (
+              'Manage parent information and contacts'
+            )}
+          </p>
         </div>
         <button
           onClick={openCreateModal}
@@ -163,6 +188,22 @@ const ParentsView = () => {
           <span>+ Add New Parent</span>
         </button>
       </div>
+
+      {/* Search Status - EXACT SAME PATTERN AS STUDENTSVIEW */}
+      {searchTerm && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-blue-700">
+                Searching for: <strong>"{searchTerm}"</strong> - Found {filteredParents.length} results
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Display */}
       {error && (
@@ -179,10 +220,10 @@ const ParentsView = () => {
         </div>
       )}
 
-      {/* Parents Grid */}
+      {/* Parents Grid - EXACT SAME PATTERN AS STUDENTSVIEW */}
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {parents.map((parent) => (
+          {displayParents.map((parent) => (
             <div key={parent._id} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">{parent.name}</h3>
@@ -238,18 +279,27 @@ const ParentsView = () => {
         </div>
       )}
 
-      {/* Empty State */}
-      {!loading && parents.length === 0 && (
+      {/* Empty State - EXACT SAME PATTERN AS STUDENTSVIEW */}
+      {!loading && displayParents.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">👨‍👩‍👧‍👦</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No parents yet</h3>
-          <p className="text-gray-500 mb-4">Get started by adding your first parent</p>
-          <button
-            onClick={openCreateModal}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Add First Parent
-          </button>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {searchTerm ? 'No parents found' : 'No parents yet'}
+          </h3>
+          <p className="text-gray-500 mb-4">
+            {searchTerm 
+              ? `No parents found for "${searchTerm}". Try a different search term.`
+              : 'Get started by adding your first parent'
+            }
+          </p>
+          {!searchTerm && (
+            <button
+              onClick={openCreateModal}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Add First Parent
+            </button>
+          )}
         </div>
       )}
 

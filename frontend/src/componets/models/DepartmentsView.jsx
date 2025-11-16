@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { departmentAPI } from '../../services/api';
+import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
-const DepartmentsView = () => {
+const DepartmentsView = ({ searchTerm, searchResults }) => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,6 +17,14 @@ const DepartmentsView = () => {
   });
 
   const { getToken } = useAuth();
+
+  // Filter departments based on search term
+  const filteredDepartments = useMemo(() => {
+    if (!searchTerm) return departments;
+    
+    const searchableFields = getSearchableFields('departments');
+    return searchData(departments, searchTerm, searchableFields);
+  }, [departments, searchTerm]);
 
   const fetchDepartments = async () => {
     setLoading(true);
@@ -32,6 +41,16 @@ const DepartmentsView = () => {
   };
 
   useEffect(() => { fetchDepartments(); }, []);
+
+  // Debug search
+  useEffect(() => {
+    console.log('🔍 Departments Search Debug:', {
+      searchTerm,
+      departmentsCount: departments.length,
+      filteredCount: filteredDepartments.length,
+      searchableFields: getSearchableFields('departments')
+    });
+  }, [searchTerm, departments, filteredDepartments]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -101,17 +120,45 @@ const DepartmentsView = () => {
     setIsModalOpen(true);
   };
 
+  // Use filtered departments for display
+  const displayDepartments = searchTerm ? filteredDepartments : departments;
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Departments Management</h2>
-          <p className="text-gray-600">Manage academic and administrative departments</p>
+          <p className="text-gray-600">
+            {searchTerm ? (
+              <span>
+                Showing {filteredDepartments.length} of {departments.length} departments
+                {searchTerm && ` for "${searchTerm}"`}
+              </span>
+            ) : (
+              'Manage academic and administrative departments'
+            )}
+          </p>
         </div>
         <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
           + Add New Department
         </button>
       </div>
+
+      {/* Search Status */}
+      {searchTerm && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-blue-700">
+                Searching for: <strong>"{searchTerm}"</strong> - Found {filteredDepartments.length} results
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
 
@@ -124,7 +171,7 @@ const DepartmentsView = () => {
 
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {departments.map((department) => (
+          {displayDepartments.map((department) => (
             <div key={department._id} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">{department.name}</h3>
@@ -161,14 +208,23 @@ const DepartmentsView = () => {
         </div>
       )}
 
-      {!loading && departments.length === 0 && (
+      {!loading && displayDepartments.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">🏢</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No departments yet</h3>
-          <p className="text-gray-500 mb-4">Get started by adding your first department</p>
-          <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            Add First Department
-          </button>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {searchTerm ? 'No departments found' : 'No departments yet'}
+          </h3>
+          <p className="text-gray-500 mb-4">
+            {searchTerm 
+              ? `No departments found for "${searchTerm}". Try a different search term.`
+              : 'Get started by adding your first department'
+            }
+          </p>
+          {!searchTerm && (
+            <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+              Add First Department
+            </button>
+          )}
         </div>
       )}
 
