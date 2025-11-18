@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useStakeholderAPI } from '../../services/api'; // CHANGED: Using hook now
+import { useStakeholderAPI } from '../../services/api';
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const StakeholdersView = ({ searchTerm, searchResults }) => {
@@ -16,7 +16,6 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
     contribution: ''
   });
 
-  // ✅ CHANGED: Use the hook-based API
   const stakeholderAPI = useStakeholderAPI();
 
   // Filter stakeholders based on search term
@@ -44,17 +43,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
     }
   };
 
-  useEffect(() => { fetchStakeholders(); }, []); // ✅ stakeholderAPI is stable, so no need to add it to dependencies
-
-  // Debug search
-  useEffect(() => {
-    console.log('🔍 Stakeholders Search Debug:', {
-      searchTerm,
-      stakeholdersCount: stakeholders.length,
-      filteredCount: filteredStakeholders.length,
-      searchableFields: getSearchableFields('stakeholders')
-    });
-  }, [searchTerm, stakeholders, filteredStakeholders]);
+  useEffect(() => { fetchStakeholders(); }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -152,11 +141,12 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
   const displayStakeholders = searchTerm ? filteredStakeholders : stakeholders;
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Stakeholders Management</h2>
-          <p className="text-gray-600">
+    <div className="p-4 lg:p-6">
+      {/* Header Section - Stack on mobile */}
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0 mb-6">
+        <div className="text-center lg:text-left">
+          <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Stakeholders Management</h2>
+          <p className="text-gray-600 text-sm lg:text-base">
             {searchTerm ? (
               <span>
                 Showing {filteredStakeholders.length} of {stakeholders.length} stakeholders
@@ -167,7 +157,10 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
             )}
           </p>
         </div>
-        <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={openCreateModal} 
+          className="touch-button bg-blue-600 text-white px-4 py-3 lg:py-2 rounded-lg hover:bg-blue-700 transition-colors w-full lg:w-auto text-base"
+        >
           + Add New Stakeholder
         </button>
       </div>
@@ -180,7 +173,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <span className="text-blue-700">
+              <span className="text-blue-700 text-sm lg:text-base">
                 Searching for: <strong>"{searchTerm}"</strong> - Found {filteredStakeholders.length} results
               </span>
             </div>
@@ -190,11 +183,11 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm lg:text-base">
           {error}
           <button 
             onClick={() => setError('')}
-            className="float-right text-red-800 font-bold"
+            className="float-right text-red-800 font-bold touch-button px-2"
           >
             ×
           </button>
@@ -209,40 +202,50 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
       )}
 
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {displayStakeholders.map((stakeholder) => (
-            <div key={stakeholder._id} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
+            <div key={stakeholder._id} className="bg-white rounded-lg shadow-sm border p-4 lg:p-6 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">{stakeholder.name}</h3>
-                <div className="flex space-x-2">
-                  <button onClick={() => handleEdit(stakeholder)} className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                  <button onClick={() => handleDelete(stakeholder._id)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                <h3 className="text-lg font-semibold text-gray-800 truncate">{stakeholder.name}</h3>
+                <div className="flex space-x-2 flex-shrink-0">
+                  <button 
+                    onClick={() => handleEdit(stakeholder)} 
+                    className="touch-button text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(stakeholder._id)} 
+                    className="touch-button text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
               
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
-                  <span>{getTypeIcon(stakeholder.type)}</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${getTypeColor(stakeholder.type)}`}>
+                  <span className="text-lg">{getTypeIcon(stakeholder.type)}</span>
+                  <span className={`px-2 py-1 rounded-full text-xs ${getTypeColor(stakeholder.type)} truncate max-w-[120px]`}>
                     {stakeholder.type}
                   </span>
                 </div>
                 {stakeholder.contact && (
                   <div className="flex items-center space-x-2">
                     <span>📞</span>
-                    <span>{stakeholder.contact}</span>
+                    <span className="truncate">{stakeholder.contact}</span>
                   </div>
                 )}
                 {stakeholder.email && (
                   <div className="flex items-center space-x-2">
                     <span>📧</span>
-                    <span>{stakeholder.email}</span>
+                    <span className="truncate">{stakeholder.email}</span>
                   </div>
                 )}
                 {stakeholder.contribution && (
                   <div className="flex items-start space-x-2">
                     <span>🎁</span>
-                    <span>Contribution: {stakeholder.contribution}</span>
+                    <span className="text-xs line-clamp-2">Contribution: {stakeholder.contribution}</span>
                   </div>
                 )}
               </div>
@@ -261,24 +264,28 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             {searchTerm ? 'No stakeholders found' : 'No stakeholders yet'}
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 mb-4 px-4">
             {searchTerm 
               ? `No stakeholders found for "${searchTerm}". Try a different search term.`
               : 'Get started by adding your first stakeholder'
             }
           </p>
           {!searchTerm && (
-            <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            <button 
+              onClick={openCreateModal} 
+              className="touch-button bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-base"
+            >
               Add First Stakeholder
             </button>
           )}
         </div>
       )}
 
+      {/* Modal - Full screen on mobile */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-4 lg:p-6">
               <h3 className="text-lg font-semibold mb-4">
                 {editingStakeholder ? 'Edit Stakeholder' : 'Add New Stakeholder'}
               </h3>
@@ -293,7 +300,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                     placeholder="Stakeholder's name"
                   />
                 </div>
@@ -307,7 +314,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
                     value={formData.type}
                     onChange={handleInputChange}
                     required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                   >
                     <option value="Distributor">Distributor</option>
                     <option value="Collaborator">Collaborator</option>
@@ -324,7 +331,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
                     name="contact"
                     value={formData.contact}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                     placeholder="Phone number or contact info"
                   />
                 </div>
@@ -338,7 +345,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                     placeholder="Email address"
                   />
                 </div>
@@ -352,7 +359,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
                     value={formData.contribution}
                     onChange={handleInputChange}
                     rows="3"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                     placeholder="Describe their contribution or support..."
                   ></textarea>
                 </div>
@@ -364,14 +371,14 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
                       setIsModalOpen(false);
                       resetForm();
                     }}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    className="touch-button px-4 py-3 lg:py-2 text-gray-600 hover:text-gray-800 text-base"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="touch-button bg-blue-600 text-white px-4 py-3 lg:py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 text-base"
                   >
                     {loading ? 'Saving...' : (editingStakeholder ? 'Update' : 'Create')}
                   </button>

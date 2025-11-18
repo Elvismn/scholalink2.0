@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useStudentAPI } from '../../services/api'; // CHANGED: Using hook now
+import { useStudentAPI } from '../../services/api';
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const StudentsView = ({ searchTerm, searchResults }) => {
@@ -24,7 +24,6 @@ const StudentsView = ({ searchTerm, searchResults }) => {
     status: 'Active'
   });
 
-  // ✅ CHANGED: Use the hook-based API
   const studentAPI = useStudentAPI();
 
   // Filter students based on search term
@@ -53,17 +52,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
 
   useEffect(() => { 
     fetchStudents(); 
-  }, []); // ✅ studentAPI is stable, so no need to add it to dependencies
-
-  // Debug search
-  useEffect(() => {
-    console.log('🔍 Students Search Debug:', {
-      searchTerm,
-      studentsCount: students.length,
-      filteredCount: filteredStudents.length,
-      searchableFields: getSearchableFields('students')
-    });
-  }, [searchTerm, students, filteredStudents]);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -190,11 +179,12 @@ const StudentsView = ({ searchTerm, searchResults }) => {
   const displayStudents = searchTerm ? filteredStudents : students;
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Students Management</h2>
-          <p className="text-gray-600">
+    <div className="p-4 lg:p-6">
+      {/* Header Section - Stack on mobile */}
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0 mb-6">
+        <div className="text-center lg:text-left">
+          <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Students Management</h2>
+          <p className="text-gray-600 text-sm lg:text-base">
             {searchTerm ? (
               <span>
                 Showing {filteredStudents.length} of {students.length} students
@@ -205,7 +195,10 @@ const StudentsView = ({ searchTerm, searchResults }) => {
             )}
           </p>
         </div>
-        <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={openCreateModal} 
+          className="touch-button bg-blue-600 text-white px-4 py-3 lg:py-2 rounded-lg hover:bg-blue-700 transition-colors w-full lg:w-auto text-base"
+        >
           + Add New Student
         </button>
       </div>
@@ -218,7 +211,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <span className="text-blue-700">
+              <span className="text-blue-700 text-sm lg:text-base">
                 Searching for: <strong>"{searchTerm}"</strong> - Found {filteredStudents.length} results
               </span>
             </div>
@@ -228,11 +221,11 @@ const StudentsView = ({ searchTerm, searchResults }) => {
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm lg:text-base">
           {error}
           <button 
             onClick={() => setError('')}
-            className="float-right text-red-800 font-bold"
+            className="float-right text-red-800 font-bold touch-button px-2"
           >
             ×
           </button>
@@ -247,26 +240,36 @@ const StudentsView = ({ searchTerm, searchResults }) => {
       )}
 
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {displayStudents.map((student) => (
-            <div key={student._id} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
+            <div key={student._id} className="bg-white rounded-lg shadow-sm border p-4 lg:p-6 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-800 truncate">
                     {student.firstName} {student.lastName}
                   </h3>
-                  <p className="text-sm text-gray-600">ID: {student.studentId}</p>
+                  <p className="text-sm text-gray-600 truncate">ID: {student.studentId}</p>
                 </div>
-                <div className="flex space-x-2">
-                  <button onClick={() => handleEdit(student)} className="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
-                  <button onClick={() => handleDelete(student._id)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                <div className="flex space-x-2 flex-shrink-0 ml-2">
+                  <button 
+                    onClick={() => handleEdit(student)} 
+                    className="touch-button text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(student._id)} 
+                    className="touch-button text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
               
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
                   <span>📊</span>
-                  <span>Grade: {student.grade}</span>
+                  <span className="truncate">Grade: {student.grade}</span>
                 </div>
                 {student.dateOfBirth && (
                   <div className="flex items-center space-x-2">
@@ -277,25 +280,25 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                 {student.gender && (
                   <div className="flex items-center space-x-2">
                     <span>👤</span>
-                    <span>{student.gender}</span>
+                    <span className="truncate">{student.gender}</span>
                   </div>
                 )}
                 <div className="flex items-center space-x-2">
                   <span>🔄</span>
-                  <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(student.status)}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(student.status)} truncate max-w-[100px]`}>
                     {student.status}
                   </span>
                 </div>
                 {student.parentName && (
                   <div className="flex items-center space-x-2">
                     <span>👨‍👩‍👧‍👦</span>
-                    <span>Parent: {student.parentName}</span>
+                    <span className="truncate">Parent: {student.parentName}</span>
                   </div>
                 )}
                 {student.parentContact && (
                   <div className="flex items-center space-x-2">
                     <span>📞</span>
-                    <span className="text-xs">{student.parentContact}</span>
+                    <span className="text-xs truncate">{student.parentContact}</span>
                   </div>
                 )}
                 {student.enrollmentDate && (
@@ -320,29 +323,34 @@ const StudentsView = ({ searchTerm, searchResults }) => {
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             {searchTerm ? 'No students found' : 'No students yet'}
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 mb-4 px-4">
             {searchTerm 
               ? `No students found for "${searchTerm}". Try a different search term.`
               : 'Get started by adding your first student'
             }
           </p>
           {!searchTerm && (
-            <button onClick={openCreateModal} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            <button 
+              onClick={openCreateModal} 
+              className="touch-button bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-base"
+            >
               Add First Student
             </button>
           )}
         </div>
       )}
 
+      {/* Modal - Full screen on mobile with optimized form */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-4 lg:p-6">
               <h3 className="text-lg font-semibold mb-4">
                 {editingStudent ? 'Edit Student' : 'Add New Student'}
               </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Personal Information */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       First Name *
@@ -353,7 +361,8 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      placeholder="First name"
                     />
                   </div>
 
@@ -367,12 +376,13 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      placeholder="Last name"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Student ID *
@@ -383,7 +393,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       value={formData.studentId}
                       onChange={handleInputChange}
                       required
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                       placeholder="e.g., STU001"
                     />
                   </div>
@@ -398,13 +408,13 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       value={formData.grade}
                       onChange={handleInputChange}
                       required
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                       placeholder="e.g., Grade 5, Form 2"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Date of Birth
@@ -414,7 +424,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       name="dateOfBirth"
                       value={formData.dateOfBirth}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                     />
                   </div>
 
@@ -426,7 +436,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       name="gender"
                       value={formData.gender}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                     >
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
@@ -435,6 +445,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                   </div>
                 </div>
 
+                {/* Parent Information */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Parent Name
@@ -444,11 +455,12 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                     name="parentName"
                     value={formData.parentName}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                    placeholder="Parent or guardian name"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Parent Contact
@@ -458,7 +470,8 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       name="parentContact"
                       value={formData.parentContact}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      placeholder="Phone number"
                     />
                   </div>
 
@@ -471,7 +484,8 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       name="parentEmail"
                       value={formData.parentEmail}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      placeholder="Email address"
                     />
                   </div>
                 </div>
@@ -485,11 +499,12 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                     value={formData.address}
                     onChange={handleInputChange}
                     rows="2"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                    placeholder="Home address"
                   ></textarea>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Emergency Contact
@@ -499,7 +514,8 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       name="emergencyContact"
                       value={formData.emergencyContact}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                      placeholder="Emergency contact number"
                     />
                   </div>
 
@@ -511,7 +527,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                     >
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
@@ -530,7 +546,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                     value={formData.medicalInfo}
                     onChange={handleInputChange}
                     rows="3"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                     placeholder="Allergies, conditions, special needs..."
                   ></textarea>
                 </div>
@@ -542,14 +558,14 @@ const StudentsView = ({ searchTerm, searchResults }) => {
                       setIsModalOpen(false);
                       resetForm();
                     }}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    className="touch-button px-4 py-3 lg:py-2 text-gray-600 hover:text-gray-800 text-base"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="touch-button bg-blue-600 text-white px-4 py-3 lg:py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 text-base"
                   >
                     {loading ? 'Saving...' : (editingStudent ? 'Update' : 'Create')}
                   </button>

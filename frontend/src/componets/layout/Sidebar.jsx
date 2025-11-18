@@ -1,29 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UserButton, useUser } from "@clerk/clerk-react";
 
-const Sidebar = ({ models, activeModel, onModelChange }) => {
+const Sidebar = ({ models, activeModel, onModelChange, isMobileOpen, onMobileClose }) => {
   const { user } = useUser();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Close mobile sidebar when model changes
+  useEffect(() => {
+    if (isMobileOpen) {
+      onMobileClose();
+    }
+  }, [activeModel]);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   return (
-    <div className={`bg-gradient-to-b from-blue-800 to-purple-900 shadow-xl flex flex-col h-screen rounded transition-all duration-300 ${
-      isCollapsed ? 'w-20' : 'w-64'
-    }`}>
+    <div className={`
+      bg-gradient-to-b from-blue-800 to-purple-900 shadow-xl flex flex-col h-full
+      transition-all duration-300 ease-in-out
+      ${isCollapsed ? 'w-16 lg:w-20' : 'w-full lg:w-64'}
+      ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      fixed lg:relative z-50
+    `}>
       {/* Header */}
       <div className="p-4 border-b border-blue-700">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} mb-4`}>
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-blue-600 font-bold text-lg">S2</span>
-          </div>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold text-white truncate">Scholalink 2.0</h2>
-              <p className="text-blue-200 text-sm truncate">Admin Portal</p>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between lg:justify-start lg:space-x-3'} mb-4`}>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-blue-600 font-bold text-lg">S2</span>
             </div>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-bold text-white truncate">Scholalink 2.0</h2>
+                <p className="text-blue-200 text-sm truncate hidden lg:block">Admin Portal</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Mobile Close Button */}
+          {!isCollapsed && (
+            <button
+              onClick={onMobileClose}
+              className="lg:hidden touch-button p-1 text-blue-200 hover:text-white"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           )}
         </div>
         
@@ -32,12 +57,12 @@ const Sidebar = ({ models, activeModel, onModelChange }) => {
           <UserButton 
             appearance={{
               elements: {
-                avatarBox: "w-8 h-8"
+                avatarBox: "w-8 h-8 lg:w-10 lg:h-10"
               }
             }}
           />
           {!isCollapsed && (
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 hidden lg:block">
               <p className="text-white font-medium text-sm truncate">
                 {user?.firstName} {user?.lastName}
               </p>
@@ -53,7 +78,7 @@ const Sidebar = ({ models, activeModel, onModelChange }) => {
       <nav className="flex-1 p-4 overflow-y-auto">
         <div className="mb-4">
           {!isCollapsed && (
-            <h3 className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-2 px-2">
+            <h3 className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-2 px-2 hidden lg:block">
               Management Modules
             </h3>
           )}
@@ -62,7 +87,7 @@ const Sidebar = ({ models, activeModel, onModelChange }) => {
               <li key={model.id}>
                 <button
                   onClick={() => onModelChange(model.id)}
-                  className={`w-full flex items-center ${
+                  className={`w-full flex items-center touch-button ${
                     isCollapsed ? 'justify-center px-2' : 'space-x-3 px-3'
                   } py-3 rounded-lg transition-all duration-200 group ${
                     activeModel === model.id
@@ -77,14 +102,14 @@ const Sidebar = ({ models, activeModel, onModelChange }) => {
                     {model.icon}
                   </span>
                   {!isCollapsed && (
-                    <span className={`font-medium text-left flex-1 ${
+                    <span className={`font-medium text-left flex-1 text-sm lg:text-base ${
                       activeModel === model.id ? 'text-gray-800' : 'text-blue-100'
                     }`}>
                       {model.name}
                     </span>
                   )}
                   {!isCollapsed && activeModel === model.id && (
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full hidden lg:block"></div>
                   )}
                 </button>
               </li>
@@ -92,9 +117,9 @@ const Sidebar = ({ models, activeModel, onModelChange }) => {
           </ul>
         </div>
 
-        {/* Quick Stats Section - Hidden when collapsed */}
+        {/* Quick Stats Section - Hidden when collapsed or on mobile */}
         {!isCollapsed && (
-          <div className="mt-8 p-3 bg-blue-700/30 rounded-lg border border-blue-600/30">
+          <div className="mt-8 p-3 bg-blue-700/30 rounded-lg border border-blue-600/30 hidden lg:block">
             <h4 className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-2">
               Quick Stats
             </h4>
@@ -116,8 +141,8 @@ const Sidebar = ({ models, activeModel, onModelChange }) => {
         )}
       </nav>
 
-      {/* Footer with Toggle Button */}
-      <div className="p-4 border-t border-blue-700">
+      {/* Footer with Toggle Button - Hidden on mobile */}
+      <div className="p-4 border-t border-blue-700 hidden lg:block">
         {/* Toggle Button */}
         <button
           onClick={toggleSidebar}

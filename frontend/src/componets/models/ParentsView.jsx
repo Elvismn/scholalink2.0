@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParentAPI } from '../../services/api'; // CHANGED: Using hook now
+import { useParentAPI } from '../../services/api';
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const ParentsView = ({ searchTerm, searchResults }) => {
@@ -16,7 +16,6 @@ const ParentsView = ({ searchTerm, searchResults }) => {
     children: ['']
   });
 
-  // ✅ CHANGED: Use the hook-based API
   const parentAPI = useParentAPI();
 
   // Filter parents based on search term 
@@ -46,17 +45,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
 
   useEffect(() => {
     fetchParents();
-  }, []); // ✅ parentAPI is stable, so no need to add it to dependencies
-
-  // Debug search 
-  useEffect(() => {
-    console.log('🔍 Parents Search Debug:', {
-      searchTerm,
-      parentsCount: parents.length,
-      filteredCount: filteredParents.length,
-      searchableFields: getSearchableFields('parents')
-    });
-  }, [searchTerm, parents, filteredParents]);
+  }, []);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -107,16 +96,14 @@ const ParentsView = ({ searchTerm, searchResults }) => {
       console.log('💾 ParentsView - Saving parent:', editingParent ? 'update' : 'create');
 
       if (editingParent) {
-        // Update existing parent
         await parentAPI.update(editingParent._id, dataToSend);
         console.log('✅ ParentsView - Parent updated successfully');
       } else {
-        // Create new parent
         await parentAPI.create(dataToSend);
         console.log('✅ ParentsView - Parent created successfully');
       }
 
-      await fetchParents(); // Refresh the list
+      await fetchParents();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
@@ -148,7 +135,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
         console.log('🗑️ ParentsView - Deleting parent:', id);
         await parentAPI.delete(id);
         console.log('✅ ParentsView - Parent deleted successfully');
-        await fetchParents(); // Refresh the list
+        await fetchParents();
       } catch (err) {
         console.error('❌ ParentsView - Error deleting parent:', err);
         setError('Failed to delete parent. Please try again.');
@@ -179,12 +166,12 @@ const ParentsView = ({ searchTerm, searchResults }) => {
   const displayParents = searchTerm ? filteredParents : parents;
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Parents Management</h2>
-          <p className="text-gray-600">
+    <div className="p-4 lg:p-6">
+      {/* Header - Stack on mobile */}
+      <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0 mb-6">
+        <div className="text-center lg:text-left">
+          <h2 className="text-xl lg:text-2xl font-bold text-gray-800">Parents Management</h2>
+          <p className="text-gray-600 text-sm lg:text-base">
             {searchTerm ? (
               <span>
                 Showing {filteredParents.length} of {parents.length} parents
@@ -197,9 +184,9 @@ const ParentsView = ({ searchTerm, searchResults }) => {
         </div>
         <button
           onClick={openCreateModal}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          className="touch-button bg-blue-600 text-white px-4 py-3 lg:py-2 rounded-lg hover:bg-blue-700 transition-colors w-full lg:w-auto text-base"
         >
-          <span>+ Add New Parent</span>
+          + Add New Parent
         </button>
       </div>
 
@@ -211,7 +198,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
               <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <span className="text-blue-700">
+              <span className="text-blue-700 text-sm lg:text-base">
                 Searching for: <strong>"{searchTerm}"</strong> - Found {filteredParents.length} results
               </span>
             </div>
@@ -221,11 +208,11 @@ const ParentsView = ({ searchTerm, searchResults }) => {
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm lg:text-base">
           {error}
           <button 
             onClick={() => setError('')}
-            className="float-right text-red-800 font-bold"
+            className="float-right text-red-800 font-bold touch-button px-2"
           >
             ×
           </button>
@@ -242,21 +229,21 @@ const ParentsView = ({ searchTerm, searchResults }) => {
 
       {/* Parents Grid */}
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {displayParents.map((parent) => (
-            <div key={parent._id} className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow">
+            <div key={parent._id} className="bg-white rounded-lg shadow-sm border p-4 lg:p-6 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">{parent.name}</h3>
-                <div className="flex space-x-2">
+                <h3 className="text-lg font-semibold text-gray-800 truncate">{parent.name}</h3>
+                <div className="flex space-x-2 flex-shrink-0">
                   <button
                     onClick={() => handleEdit(parent)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    className="touch-button text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(parent._id)}
-                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                    className="touch-button text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1"
                   >
                     Delete
                   </button>
@@ -266,26 +253,29 @@ const ParentsView = ({ searchTerm, searchResults }) => {
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
                   <span>📞</span>
-                  <span>{parent.contact}</span>
+                  <span className="truncate">{parent.contact}</span>
                 </div>
                 {parent.email && (
                   <div className="flex items-center space-x-2">
                     <span>📧</span>
-                    <span>{parent.email}</span>
+                    <span className="truncate">{parent.email}</span>
                   </div>
                 )}
                 {parent.address && (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-start space-x-2">
                     <span>🏠</span>
-                    <span>{parent.address}</span>
+                    <span className="text-xs line-clamp-2">{parent.address}</span>
                   </div>
                 )}
                 {parent.children && parent.children.length > 0 && (
                   <div className="flex items-start space-x-2">
                     <span>👨‍👧‍👦</span>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <span className="font-medium">Children: </span>
-                      {parent.children.join(', ')}
+                      <span className="text-xs line-clamp-2">
+                        {parent.children.slice(0, 3).join(', ')}
+                        {parent.children.length > 3 && ` +${parent.children.length - 3} more`}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -306,7 +296,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             {searchTerm ? 'No parents found' : 'No parents yet'}
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-gray-500 mb-4 px-4">
             {searchTerm 
               ? `No parents found for "${searchTerm}". Try a different search term.`
               : 'Get started by adding your first parent'
@@ -315,7 +305,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
           {!searchTerm && (
             <button
               onClick={openCreateModal}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="touch-button bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-base"
             >
               Add First Parent
             </button>
@@ -323,11 +313,11 @@ const ParentsView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Modal - Full screen on mobile */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-4 lg:p-6">
               <h3 className="text-lg font-semibold mb-4">
                 {editingParent ? 'Edit Parent' : 'Add New Parent'}
               </h3>
@@ -343,7 +333,8 @@ const ParentsView = ({ searchTerm, searchResults }) => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                    placeholder="Parent's full name"
                   />
                 </div>
 
@@ -357,7 +348,8 @@ const ParentsView = ({ searchTerm, searchResults }) => {
                     value={formData.contact}
                     onChange={handleInputChange}
                     required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                    placeholder="Phone number"
                   />
                 </div>
 
@@ -370,7 +362,8 @@ const ParentsView = ({ searchTerm, searchResults }) => {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                    placeholder="Email address"
                   />
                 </div>
 
@@ -383,7 +376,8 @@ const ParentsView = ({ searchTerm, searchResults }) => {
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+                    placeholder="Home address"
                   />
                 </div>
 
@@ -395,7 +389,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
                     <button
                       type="button"
                       onClick={addChildField}
-                      className="text-sm text-blue-600 hover:text-blue-800"
+                      className="touch-button text-sm text-blue-600 hover:text-blue-800 px-2 py-1"
                     >
                       + Add Child
                     </button>
@@ -407,13 +401,13 @@ const ParentsView = ({ searchTerm, searchResults }) => {
                         value={child}
                         onChange={(e) => handleChildChange(index, e.target.value)}
                         placeholder="Child's name"
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-3 lg:py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
                       />
                       {formData.children.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeChildField(index)}
-                          className="text-red-600 hover:text-red-800 px-2"
+                          className="touch-button text-red-600 hover:text-red-800 px-3 py-1"
                         >
                           ×
                         </button>
@@ -429,14 +423,14 @@ const ParentsView = ({ searchTerm, searchResults }) => {
                       setIsModalOpen(false);
                       resetForm();
                     }}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                    className="touch-button px-4 py-3 lg:py-2 text-gray-600 hover:text-gray-800 text-base"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="touch-button bg-blue-600 text-white px-4 py-3 lg:py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 text-base"
                   >
                     {loading ? 'Saving...' : (editingParent ? 'Update' : 'Create')}
                   </button>
