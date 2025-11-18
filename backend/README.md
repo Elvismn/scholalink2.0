@@ -2,6 +2,8 @@
 
 A comprehensive Node.js/Express backend API for school management systems, providing full CRUD operations for students, staff, courses, classrooms, departments, and more. Built with security, scalability, and ease of use in mind.
 
+The Project backend is live at https://scholalink.onrender.com
+
 ## Features
 
 - **User Authentication**: Integrated with Clerk for secure authentication and authorization
