@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@clerk/clerk-react';
-import { clubAPI } from '../../services/api';
+import { useClubAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const ClubsView = ({ searchTerm, searchResults }) => {
@@ -16,7 +15,8 @@ const ClubsView = ({ searchTerm, searchResults }) => {
     activities: ['']
   });
 
-  const { getToken } = useAuth();
+  // ✅ CHANGED: Use the hook-based API (removed manual token handling)
+  const clubAPI = useClubAPI();
 
   // Filter clubs based on search term
   const filteredClubs = useMemo(() => {
@@ -29,18 +29,20 @@ const ClubsView = ({ searchTerm, searchResults }) => {
   const fetchClubs = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
-      const response = await clubAPI.getAll(token);
+      console.log('🔍 ClubsView - Fetching clubs...');
+      const response = await clubAPI.getAll();
+      console.log('✅ ClubsView - Clubs data received:', response.data);
       setClubs(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch clubs');
-      console.error('Error fetching clubs:', err);
+      console.error('❌ ClubsView - Error fetching clubs:', err);
+      setError('Failed to fetch clubs. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchClubs(); }, []);
+  useEffect(() => { fetchClubs(); }, []); // ✅ clubAPI is stable, so no need to add it to dependencies
 
   // Debug search
   useEffect(() => {
@@ -90,29 +92,34 @@ const ClubsView = ({ searchTerm, searchResults }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = await getToken();
+      console.log('💾 ClubsView - Saving club:', editingClub ? 'update' : 'create');
+      
       const dataToSend = {
         ...formData,
         activities: formData.activities.filter(activity => activity.trim() !== '')
       };
 
       if (editingClub) {
-        await clubAPI.update(editingClub._id, dataToSend, token);
+        await clubAPI.update(editingClub._id, dataToSend);
+        console.log('✅ ClubsView - Club updated successfully');
       } else {
-        await clubAPI.create(dataToSend, token);
+        await clubAPI.create(dataToSend);
+        console.log('✅ ClubsView - Club created successfully');
       }
+      
       await fetchClubs();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save club');
-      console.error('Error saving club:', err);
+      console.error('❌ ClubsView - Error saving club:', err);
+      setError('Failed to save club. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (club) => {
+    console.log('✏️ ClubsView - Editing club:', club._id);
     setEditingClub(club);
     setFormData({
       name: club.name,
@@ -126,12 +133,13 @@ const ClubsView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this club?')) {
       try {
-        const token = await getToken();
-        await clubAPI.delete(id, token);
+        console.log('🗑️ ClubsView - Deleting club:', id);
+        await clubAPI.delete(id);
+        console.log('✅ ClubsView - Club deleted successfully');
         await fetchClubs();
       } catch (err) {
-        setError('Failed to delete club');
-        console.error('Error deleting club:', err);
+        console.error('❌ ClubsView - Error deleting club:', err);
+        setError('Failed to delete club. Please try again.');
       }
     }
   };
@@ -147,6 +155,7 @@ const ClubsView = ({ searchTerm, searchResults }) => {
   };
 
   const openCreateModal = () => {
+    console.log('➕ ClubsView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
@@ -191,7 +200,18 @@ const ClubsView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && !isModalOpen && (
         <div className="text-center py-8">

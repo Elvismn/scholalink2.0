@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@clerk/clerk-react';
-import { departmentAPI } from '../../services/api';
+import { useDepartmentAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const DepartmentsView = ({ searchTerm, searchResults }) => {
@@ -16,7 +15,8 @@ const DepartmentsView = ({ searchTerm, searchResults }) => {
     numberOfStaff: 0
   });
 
-  const { getToken } = useAuth();
+  // ✅ CHANGED: Use the hook-based API (removed manual token handling)
+  const departmentAPI = useDepartmentAPI();
 
   // Filter departments based on search term
   const filteredDepartments = useMemo(() => {
@@ -29,18 +29,20 @@ const DepartmentsView = ({ searchTerm, searchResults }) => {
   const fetchDepartments = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
-      const response = await departmentAPI.getAll(token);
+      console.log('🔍 DepartmentsView - Fetching departments...');
+      const response = await departmentAPI.getAll();
+      console.log('✅ DepartmentsView - Departments data received:', response.data);
       setDepartments(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch departments');
-      console.error('Error fetching departments:', err);
+      console.error('❌ DepartmentsView - Error fetching departments:', err);
+      setError('Failed to fetch departments. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchDepartments(); }, []);
+  useEffect(() => { fetchDepartments(); }, []); // ✅ departmentAPI is stable, so no need to add it to dependencies
 
   // Debug search
   useEffect(() => {
@@ -64,24 +66,29 @@ const DepartmentsView = ({ searchTerm, searchResults }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = await getToken();
+      console.log('💾 DepartmentsView - Saving department:', editingDepartment ? 'update' : 'create');
+
       if (editingDepartment) {
-        await departmentAPI.update(editingDepartment._id, formData, token);
+        await departmentAPI.update(editingDepartment._id, formData);
+        console.log('✅ DepartmentsView - Department updated successfully');
       } else {
-        await departmentAPI.create(formData, token);
+        await departmentAPI.create(formData);
+        console.log('✅ DepartmentsView - Department created successfully');
       }
+      
       await fetchDepartments();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save department');
-      console.error('Error saving department:', err);
+      console.error('❌ DepartmentsView - Error saving department:', err);
+      setError('Failed to save department. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (department) => {
+    console.log('✏️ DepartmentsView - Editing department:', department._id);
     setEditingDepartment(department);
     setFormData({
       name: department.name,
@@ -95,12 +102,13 @@ const DepartmentsView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this department?')) {
       try {
-        const token = await getToken();
-        await departmentAPI.delete(id, token);
+        console.log('🗑️ DepartmentsView - Deleting department:', id);
+        await departmentAPI.delete(id);
+        console.log('✅ DepartmentsView - Department deleted successfully');
         await fetchDepartments();
       } catch (err) {
-        setError('Failed to delete department');
-        console.error('Error deleting department:', err);
+        console.error('❌ DepartmentsView - Error deleting department:', err);
+        setError('Failed to delete department. Please try again.');
       }
     }
   };
@@ -116,6 +124,7 @@ const DepartmentsView = ({ searchTerm, searchResults }) => {
   };
 
   const openCreateModal = () => {
+    console.log('➕ DepartmentsView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
@@ -160,7 +169,18 @@ const DepartmentsView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && !isModalOpen && (
         <div className="text-center py-8">

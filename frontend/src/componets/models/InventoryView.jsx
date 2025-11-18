@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@clerk/clerk-react';
-import { inventoryAPI } from '../../services/api';
+import { useInventoryAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const InventoryView = ({ searchTerm, searchResults }) => {
@@ -16,7 +15,8 @@ const InventoryView = ({ searchTerm, searchResults }) => {
     condition: 'Good'
   });
 
-  const { getToken } = useAuth();
+  // ✅ CHANGED: Use the hook-based API (removed manual token handling)
+  const inventoryAPI = useInventoryAPI();
 
   // Filter inventory based on search term
   const filteredInventory = useMemo(() => {
@@ -29,12 +29,14 @@ const InventoryView = ({ searchTerm, searchResults }) => {
   const fetchInventory = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
-      const response = await inventoryAPI.getAll(token);
+      console.log('🔍 InventoryView - Fetching inventory...');
+      const response = await inventoryAPI.getAll();
+      console.log('✅ InventoryView - Inventory data received:', response.data);
       setInventory(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch inventory');
-      console.error('Error fetching inventory:', err);
+      console.error('❌ InventoryView - Error fetching inventory:', err);
+      setError('Failed to fetch inventory. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -42,7 +44,7 @@ const InventoryView = ({ searchTerm, searchResults }) => {
 
   useEffect(() => { 
     fetchInventory(); 
-  }, []);
+  }, []); // ✅ inventoryAPI is stable, so no need to add it to dependencies
 
   // Debug search
   useEffect(() => {
@@ -66,24 +68,29 @@ const InventoryView = ({ searchTerm, searchResults }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = await getToken();
+      console.log('💾 InventoryView - Saving inventory item:', editingItem ? 'update' : 'create');
+
       if (editingItem) {
-        await inventoryAPI.update(editingItem._id, formData, token);
+        await inventoryAPI.update(editingItem._id, formData);
+        console.log('✅ InventoryView - Inventory item updated successfully');
       } else {
-        await inventoryAPI.create(formData, token);
+        await inventoryAPI.create(formData);
+        console.log('✅ InventoryView - Inventory item created successfully');
       }
+      
       await fetchInventory();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save inventory item');
-      console.error('Error saving inventory item:', err);
+      console.error('❌ InventoryView - Error saving inventory item:', err);
+      setError('Failed to save inventory item. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (item) => {
+    console.log('✏️ InventoryView - Editing inventory item:', item._id);
     setEditingItem(item);
     setFormData({
       itemName: item.itemName,
@@ -97,12 +104,13 @@ const InventoryView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this inventory item?')) {
       try {
-        const token = await getToken();
-        await inventoryAPI.delete(id, token);
+        console.log('🗑️ InventoryView - Deleting inventory item:', id);
+        await inventoryAPI.delete(id);
+        console.log('✅ InventoryView - Inventory item deleted successfully');
         await fetchInventory();
       } catch (err) {
-        setError('Failed to delete inventory item');
-        console.error('Error deleting inventory item:', err);
+        console.error('❌ InventoryView - Error deleting inventory item:', err);
+        setError('Failed to delete inventory item. Please try again.');
       }
     }
   };
@@ -118,6 +126,7 @@ const InventoryView = ({ searchTerm, searchResults }) => {
   };
 
   const openCreateModal = () => {
+    console.log('➕ InventoryView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
@@ -186,7 +195,18 @@ const InventoryView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && !isModalOpen && (
         <div className="text-center py-8">

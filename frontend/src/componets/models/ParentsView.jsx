@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { parentAPI } from '../../services/api';
+import { useParentAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const ParentsView = ({ searchTerm, searchResults }) => {
@@ -16,6 +16,9 @@ const ParentsView = ({ searchTerm, searchResults }) => {
     children: ['']
   });
 
+  // ✅ CHANGED: Use the hook-based API
+  const parentAPI = useParentAPI();
+
   // Filter parents based on search term 
   const filteredParents = useMemo(() => {
     if (!searchTerm) return parents;
@@ -28,11 +31,14 @@ const ParentsView = ({ searchTerm, searchResults }) => {
   const fetchParents = async () => {
     setLoading(true);
     try {
+      console.log('🔍 ParentsView - Fetching parents...');
       const response = await parentAPI.getAll();
+      console.log('✅ ParentsView - Parents data received:', response.data);
       setParents(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch parents');
-      console.error('Error fetching parents:', err);
+      console.error('❌ ParentsView - Error fetching parents:', err);
+      setError('Failed to fetch parents. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -40,7 +46,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
 
   useEffect(() => {
     fetchParents();
-  }, []);
+  }, []); // ✅ parentAPI is stable, so no need to add it to dependencies
 
   // Debug search 
   useEffect(() => {
@@ -87,7 +93,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
     }));
   };
 
-  // Submit form (create or update) - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Submit form (create or update)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -98,20 +104,24 @@ const ParentsView = ({ searchTerm, searchResults }) => {
         children: formData.children.filter(child => child.trim() !== '')
       };
 
+      console.log('💾 ParentsView - Saving parent:', editingParent ? 'update' : 'create');
+
       if (editingParent) {
         // Update existing parent
         await parentAPI.update(editingParent._id, dataToSend);
+        console.log('✅ ParentsView - Parent updated successfully');
       } else {
         // Create new parent
         await parentAPI.create(dataToSend);
+        console.log('✅ ParentsView - Parent created successfully');
       }
 
       await fetchParents(); // Refresh the list
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save parent');
-      console.error('Error saving parent:', err);
+      console.error('❌ ParentsView - Error saving parent:', err);
+      setError('Failed to save parent. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -119,6 +129,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
 
   // Edit parent
   const handleEdit = (parent) => {
+    console.log('✏️ ParentsView - Editing parent:', parent._id);
     setEditingParent(parent);
     setFormData({
       name: parent.name,
@@ -130,15 +141,17 @@ const ParentsView = ({ searchTerm, searchResults }) => {
     setIsModalOpen(true);
   };
 
-  // Delete parent - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Delete parent
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this parent?')) {
       try {
+        console.log('🗑️ ParentsView - Deleting parent:', id);
         await parentAPI.delete(id);
+        console.log('✅ ParentsView - Parent deleted successfully');
         await fetchParents(); // Refresh the list
       } catch (err) {
-        setError('Failed to delete parent');
-        console.error('Error deleting parent:', err);
+        console.error('❌ ParentsView - Error deleting parent:', err);
+        setError('Failed to delete parent. Please try again.');
       }
     }
   };
@@ -157,16 +170,17 @@ const ParentsView = ({ searchTerm, searchResults }) => {
 
   // Open modal for new parent
   const openCreateModal = () => {
+    console.log('➕ ParentsView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
 
-  // Use filtered parents for display - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Use filtered parents for display
   const displayParents = searchTerm ? filteredParents : parents;
 
   return (
     <div className="p-6">
-      {/* Header - EXACT SAME PATTERN AS STUDENTSVIEW */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Parents Management</h2>
@@ -189,7 +203,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
         </button>
       </div>
 
-      {/* Search Status - EXACT SAME PATTERN AS STUDENTSVIEW */}
+      {/* Search Status */}
       {searchTerm && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center justify-between">
@@ -209,6 +223,12 @@ const ParentsView = ({ searchTerm, searchResults }) => {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
         </div>
       )}
 
@@ -220,7 +240,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {/* Parents Grid - EXACT SAME PATTERN AS STUDENTSVIEW */}
+      {/* Parents Grid */}
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {displayParents.map((parent) => (
@@ -279,7 +299,7 @@ const ParentsView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {/* Empty State - EXACT SAME PATTERN AS STUDENTSVIEW */}
+      {/* Empty State */}
       {!loading && displayParents.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">👨‍👩‍👧‍👦</div>

@@ -1,6 +1,5 @@
-// Updated StaffView.jsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { staffAPI } from '../../services/api';
+import { useStaffAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const StaffView = ({ searchTerm, searchResults }) => {
@@ -18,6 +17,9 @@ const StaffView = ({ searchTerm, searchResults }) => {
     email: ''
   });
 
+  // ✅ CHANGED: Use the hook-based API
+  const staffAPI = useStaffAPI();
+
   // Filter staff based on search term
   const filteredStaff = useMemo(() => {
     if (!searchTerm) return staff;
@@ -30,11 +32,14 @@ const StaffView = ({ searchTerm, searchResults }) => {
   const fetchStaff = async () => {
     setLoading(true);
     try {
+      console.log('🔍 StaffView - Fetching staff...');
       const response = await staffAPI.getAll();
+      console.log('✅ StaffView - Staff data received:', response.data);
       setStaff(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch staff');
-      console.error('Error fetching staff:', err);
+      console.error('❌ StaffView - Error fetching staff:', err);
+      setError('Failed to fetch staff. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -42,7 +47,17 @@ const StaffView = ({ searchTerm, searchResults }) => {
 
   useEffect(() => {
     fetchStaff();
-  }, []);
+  }, []); // ✅ staffAPI is stable, so no need to add it to dependencies
+
+  // Debug search
+  useEffect(() => {
+    console.log('🔍 Staff Search Debug:', {
+      searchTerm,
+      staffCount: staff.length,
+      filteredCount: filteredStaff.length,
+      searchableFields: getSearchableFields('staff')
+    });
+  }, [searchTerm, staff, filteredStaff]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -59,20 +74,24 @@ const StaffView = ({ searchTerm, searchResults }) => {
     setLoading(true);
     
     try {
+      console.log('💾 StaffView - Saving staff:', editingStaff ? 'update' : 'create');
+
       if (editingStaff) {
         // Update existing staff
         await staffAPI.update(editingStaff._id, formData);
+        console.log('✅ StaffView - Staff updated successfully');
       } else {
         // Create new staff
         await staffAPI.create(formData);
+        console.log('✅ StaffView - Staff created successfully');
       }
 
       await fetchStaff(); // Refresh the list
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save staff member');
-      console.error('Error saving staff:', err);
+      console.error('❌ StaffView - Error saving staff:', err);
+      setError('Failed to save staff member. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -80,6 +99,7 @@ const StaffView = ({ searchTerm, searchResults }) => {
 
   // Edit staff
   const handleEdit = (staffMember) => {
+    console.log('✏️ StaffView - Editing staff:', staffMember._id);
     setEditingStaff(staffMember);
     setFormData({
       name: staffMember.name,
@@ -96,11 +116,13 @@ const StaffView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this staff member?')) {
       try {
+        console.log('🗑️ StaffView - Deleting staff:', id);
         await staffAPI.delete(id);
+        console.log('✅ StaffView - Staff deleted successfully');
         await fetchStaff(); // Refresh the list
       } catch (err) {
-        setError('Failed to delete staff member');
-        console.error('Error deleting staff:', err);
+        console.error('❌ StaffView - Error deleting staff:', err);
+        setError('Failed to delete staff member. Please try again.');
       }
     }
   };
@@ -120,6 +142,7 @@ const StaffView = ({ searchTerm, searchResults }) => {
 
   // Open modal for new staff
   const openCreateModal = () => {
+    console.log('➕ StaffView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
@@ -172,6 +195,12 @@ const StaffView = ({ searchTerm, searchResults }) => {
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
         </div>
       )}
 

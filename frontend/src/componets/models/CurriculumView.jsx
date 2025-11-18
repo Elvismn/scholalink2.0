@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@clerk/clerk-react';
-import { curriculumAPI } from '../../services/api';
+import { useCurriculumAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const CurriculumView = ({ searchTerm, searchResults }) => {
@@ -16,7 +15,8 @@ const CurriculumView = ({ searchTerm, searchResults }) => {
     description: ''
   });
 
-  const { getToken } = useAuth();
+  // ✅ CHANGED: Use the hook-based API (removed manual token handling)
+  const curriculumAPI = useCurriculumAPI();
 
   // Filter curriculums based on search term
   const filteredCurriculums = useMemo(() => {
@@ -30,18 +30,20 @@ const CurriculumView = ({ searchTerm, searchResults }) => {
   const fetchCurriculums = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
-      const response = await curriculumAPI.getAll(token);
+      console.log('🔍 CurriculumView - Fetching curriculums...');
+      const response = await curriculumAPI.getAll();
+      console.log('✅ CurriculumView - Curriculums data received:', response.data);
       setCurriculums(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch curriculums');
-      console.error('Error fetching curriculums:', err);
+      console.error('❌ CurriculumView - Error fetching curriculums:', err);
+      setError('Failed to fetch curriculums. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchCurriculums(); }, []);
+  useEffect(() => { fetchCurriculums(); }, []); // ✅ curriculumAPI is stable, so no need to add it to dependencies
 
   // Debug search with actual field names
   useEffect(() => {
@@ -89,29 +91,34 @@ const CurriculumView = ({ searchTerm, searchResults }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = await getToken();
+      console.log('💾 CurriculumView - Saving curriculum:', editingCurriculum ? 'update' : 'create');
+      
       const dataToSend = {
         ...formData,
         subjects: formData.subjects.filter(subject => subject.trim() !== '')
       };
 
       if (editingCurriculum) {
-        await curriculumAPI.update(editingCurriculum._id, dataToSend, token);
+        await curriculumAPI.update(editingCurriculum._id, dataToSend);
+        console.log('✅ CurriculumView - Curriculum updated successfully');
       } else {
-        await curriculumAPI.create(dataToSend, token);
+        await curriculumAPI.create(dataToSend);
+        console.log('✅ CurriculumView - Curriculum created successfully');
       }
+      
       await fetchCurriculums();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save curriculum');
-      console.error('Error saving curriculum:', err);
+      console.error('❌ CurriculumView - Error saving curriculum:', err);
+      setError('Failed to save curriculum. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (curriculum) => {
+    console.log('✏️ CurriculumView - Editing curriculum:', curriculum._id);
     setEditingCurriculum(curriculum);
     setFormData({
       title: curriculum.title,
@@ -125,12 +132,13 @@ const CurriculumView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this curriculum?')) {
       try {
-        const token = await getToken();
-        await curriculumAPI.delete(id, token);
+        console.log('🗑️ CurriculumView - Deleting curriculum:', id);
+        await curriculumAPI.delete(id);
+        console.log('✅ CurriculumView - Curriculum deleted successfully');
         await fetchCurriculums();
       } catch (err) {
-        setError('Failed to delete curriculum');
-        console.error('Error deleting curriculum:', err);
+        console.error('❌ CurriculumView - Error deleting curriculum:', err);
+        setError('Failed to delete curriculum. Please try again.');
       }
     }
   };
@@ -146,6 +154,7 @@ const CurriculumView = ({ searchTerm, searchResults }) => {
   };
 
   const openCreateModal = () => {
+    console.log('➕ CurriculumView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
@@ -190,7 +199,18 @@ const CurriculumView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && !isModalOpen && (
         <div className="text-center py-8">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { studentAPI } from '../../services/api';
+import { useStudentAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const StudentsView = ({ searchTerm, searchResults }) => {
@@ -24,6 +24,9 @@ const StudentsView = ({ searchTerm, searchResults }) => {
     status: 'Active'
   });
 
+  // ✅ CHANGED: Use the hook-based API
+  const studentAPI = useStudentAPI();
+
   // Filter students based on search term
   const filteredStudents = useMemo(() => {
     if (!searchTerm) return students;
@@ -35,11 +38,14 @@ const StudentsView = ({ searchTerm, searchResults }) => {
   const fetchStudents = async () => {
     setLoading(true);
     try {
+      console.log('🔍 StudentsView - Fetching students...');
       const response = await studentAPI.getAll();
+      console.log('✅ StudentsView - Students data received:', response.data);
       setStudents(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch students');
-      console.error('Error fetching students:', err);
+      console.error('❌ StudentsView - Error fetching students:', err);
+      setError('Failed to fetch students. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -47,7 +53,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
 
   useEffect(() => { 
     fetchStudents(); 
-  }, []);
+  }, []); // ✅ studentAPI is stable, so no need to add it to dependencies
 
   // Debug search
   useEffect(() => {
@@ -73,23 +79,29 @@ const StudentsView = ({ searchTerm, searchResults }) => {
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : null
       };
 
+      console.log('💾 StudentsView - Saving student:', editingStudent ? 'update' : 'create');
+
       if (editingStudent) {
         await studentAPI.update(editingStudent._id, dataToSend);
+        console.log('✅ StudentsView - Student updated successfully');
       } else {
         await studentAPI.create(dataToSend);
+        console.log('✅ StudentsView - Student created successfully');
       }
+      
       await fetchStudents();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save student');
-      console.error('Error saving student:', err);
+      console.error('❌ StudentsView - Error saving student:', err);
+      setError('Failed to save student. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (student) => {
+    console.log('✏️ StudentsView - Editing student:', student._id);
     setEditingStudent(student);
     setFormData({
       firstName: student.firstName,
@@ -112,11 +124,13 @@ const StudentsView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
       try {
+        console.log('🗑️ StudentsView - Deleting student:', id);
         await studentAPI.delete(id);
+        console.log('✅ StudentsView - Student deleted successfully');
         await fetchStudents();
       } catch (err) {
-        setError('Failed to delete student');
-        console.error('Error deleting student:', err);
+        console.error('❌ StudentsView - Error deleting student:', err);
+        setError('Failed to delete student. Please try again.');
       }
     }
   };
@@ -141,6 +155,7 @@ const StudentsView = ({ searchTerm, searchResults }) => {
   };
 
   const openCreateModal = () => {
+    console.log('➕ StudentsView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
@@ -211,7 +226,18 @@ const StudentsView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && !isModalOpen && (
         <div className="text-center py-8">

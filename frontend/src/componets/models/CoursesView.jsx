@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '@clerk/clerk-react';
-import { courseAPI } from '../../services/api';
+import { useCourseAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const CoursesView = ({ searchTerm, searchResults }) => {
@@ -17,7 +16,8 @@ const CoursesView = ({ searchTerm, searchResults }) => {
     department: ''
   });
 
-  const { getToken } = useAuth();
+  // ✅ CHANGED: Use the hook-based API (removed manual token handling)
+  const courseAPI = useCourseAPI();
 
   // Filter courses based on search term
   const filteredCourses = useMemo(() => {
@@ -30,18 +30,20 @@ const CoursesView = ({ searchTerm, searchResults }) => {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
-      const response = await courseAPI.getAll(token);
+      console.log('🔍 CoursesView - Fetching courses...');
+      const response = await courseAPI.getAll();
+      console.log('✅ CoursesView - Courses data received:', response.data);
       setCourses(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch courses');
-      console.error('Error fetching courses:', err);
+      console.error('❌ CoursesView - Error fetching courses:', err);
+      setError('Failed to fetch courses. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchCourses(); }, []);
+  useEffect(() => { fetchCourses(); }, []); // ✅ courseAPI is stable, so no need to add it to dependencies
 
   // Debug search
   useEffect(() => {
@@ -62,24 +64,29 @@ const CoursesView = ({ searchTerm, searchResults }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = await getToken();
+      console.log('💾 CoursesView - Saving course:', editingCourse ? 'update' : 'create');
+
       if (editingCourse) {
-        await courseAPI.update(editingCourse._id, formData, token);
+        await courseAPI.update(editingCourse._id, formData);
+        console.log('✅ CoursesView - Course updated successfully');
       } else {
-        await courseAPI.create(formData, token);
+        await courseAPI.create(formData);
+        console.log('✅ CoursesView - Course created successfully');
       }
+      
       await fetchCourses();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save course');
-      console.error('Error saving course:', err);
+      console.error('❌ CoursesView - Error saving course:', err);
+      setError('Failed to save course. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (course) => {
+    console.log('✏️ CoursesView - Editing course:', course._id);
     setEditingCourse(course);
     setFormData({
       name: course.name,
@@ -94,12 +101,13 @@ const CoursesView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
       try {
-        const token = await getToken();
-        await courseAPI.delete(id, token);
+        console.log('🗑️ CoursesView - Deleting course:', id);
+        await courseAPI.delete(id);
+        console.log('✅ CoursesView - Course deleted successfully');
         await fetchCourses();
       } catch (err) {
-        setError('Failed to delete course');
-        console.error('Error deleting course:', err);
+        console.error('❌ CoursesView - Error deleting course:', err);
+        setError('Failed to delete course. Please try again.');
       }
     }
   };
@@ -116,6 +124,7 @@ const CoursesView = ({ searchTerm, searchResults }) => {
   };
 
   const openCreateModal = () => {
+    console.log('➕ CoursesView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
@@ -160,7 +169,18 @@ const CoursesView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && !isModalOpen && (
         <div className="text-center py-8">

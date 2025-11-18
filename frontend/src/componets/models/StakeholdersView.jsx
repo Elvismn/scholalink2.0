@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { stakeholderAPI } from '../../services/api';
+import { useStakeholderAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const StakeholdersView = ({ searchTerm, searchResults }) => {
@@ -16,7 +16,10 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
     contribution: ''
   });
 
-  // Filter stakeholders based on search term - EXACT SAME PATTERN AS STUDENTSVIEW
+  // ✅ CHANGED: Use the hook-based API
+  const stakeholderAPI = useStakeholderAPI();
+
+  // Filter stakeholders based on search term
   const filteredStakeholders = useMemo(() => {
     if (!searchTerm) return stakeholders;
     
@@ -24,23 +27,26 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
     return searchData(stakeholders, searchTerm, searchableFields);
   }, [stakeholders, searchTerm]);
 
-  // Fetch all stakeholders - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Fetch all stakeholders
   const fetchStakeholders = async () => {
     setLoading(true);
     try {
+      console.log('🔍 StakeholdersView - Fetching stakeholders...');
       const response = await stakeholderAPI.getAll();
+      console.log('✅ StakeholdersView - Stakeholders data received:', response.data);
       setStakeholders(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch stakeholders');
-      console.error('Error fetching stakeholders:', err);
+      console.error('❌ StakeholdersView - Error fetching stakeholders:', err);
+      setError('Failed to fetch stakeholders. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchStakeholders(); }, []);
+  useEffect(() => { fetchStakeholders(); }, []); // ✅ stakeholderAPI is stable, so no need to add it to dependencies
 
-  // Debug search - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Debug search
   useEffect(() => {
     console.log('🔍 Stakeholders Search Debug:', {
       searchTerm,
@@ -59,23 +65,29 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
     e.preventDefault();
     setLoading(true);
     try {
+      console.log('💾 StakeholdersView - Saving stakeholder:', editingStakeholder ? 'update' : 'create');
+
       if (editingStakeholder) {
         await stakeholderAPI.update(editingStakeholder._id, formData);
+        console.log('✅ StakeholdersView - Stakeholder updated successfully');
       } else {
         await stakeholderAPI.create(formData);
+        console.log('✅ StakeholdersView - Stakeholder created successfully');
       }
+      
       await fetchStakeholders();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save stakeholder');
-      console.error('Error saving stakeholder:', err);
+      console.error('❌ StakeholdersView - Error saving stakeholder:', err);
+      setError('Failed to save stakeholder. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (stakeholder) => {
+    console.log('✏️ StakeholdersView - Editing stakeholder:', stakeholder._id);
     setEditingStakeholder(stakeholder);
     setFormData({
       name: stakeholder.name,
@@ -90,11 +102,13 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this stakeholder?')) {
       try {
+        console.log('🗑️ StakeholdersView - Deleting stakeholder:', id);
         await stakeholderAPI.delete(id);
+        console.log('✅ StakeholdersView - Stakeholder deleted successfully');
         await fetchStakeholders();
       } catch (err) {
-        setError('Failed to delete stakeholder');
-        console.error('Error deleting stakeholder:', err);
+        console.error('❌ StakeholdersView - Error deleting stakeholder:', err);
+        setError('Failed to delete stakeholder. Please try again.');
       }
     }
   };
@@ -111,6 +125,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
   };
 
   const openCreateModal = () => {
+    console.log('➕ StakeholdersView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
@@ -133,7 +148,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
     }
   };
 
-  // Use filtered stakeholders for display - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Use filtered stakeholders for display
   const displayStakeholders = searchTerm ? filteredStakeholders : stakeholders;
 
   return (
@@ -157,7 +172,7 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
         </button>
       </div>
 
-      {/* Search Status - EXACT SAME PATTERN AS STUDENTSVIEW */}
+      {/* Search Status */}
       {searchTerm && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center justify-between">
@@ -173,7 +188,18 @@ const StakeholdersView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && !isModalOpen && (
         <div className="text-center py-8">

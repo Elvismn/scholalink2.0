@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { classroomAPI } from '../../services/api';
+import { useClassroomAPI } from '../../services/api'; // CHANGED: Using hook now
 import { searchData, getSearchableFields } from '../../utils/searchUtils';
 
 const ClassroomsView = ({ searchTerm, searchResults }) => {
@@ -16,7 +16,10 @@ const ClassroomsView = ({ searchTerm, searchResults }) => {
     capacity: ''
   });
 
-  // Filter classrooms based on search term - EXACT SAME PATTERN AS STUDENTSVIEW
+  // ✅ CHANGED: Use the hook-based API
+  const classroomAPI = useClassroomAPI();
+
+  // Filter classrooms based on search term
   const filteredClassrooms = useMemo(() => {
     if (!searchTerm) return classrooms;
     
@@ -24,23 +27,26 @@ const ClassroomsView = ({ searchTerm, searchResults }) => {
     return searchData(classrooms, searchTerm, searchableFields);
   }, [classrooms, searchTerm]);
 
-  // Fetch all classrooms - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Fetch all classrooms
   const fetchClassrooms = async () => {
     setLoading(true);
     try {
+      console.log('🔍 ClassroomsView - Fetching classrooms...');
       const response = await classroomAPI.getAll();
+      console.log('✅ ClassroomsView - Classrooms data received:', response.data);
       setClassrooms(response.data);
+      setError('');
     } catch (err) {
-      setError('Failed to fetch classrooms');
-      console.error('Error fetching classrooms:', err);
+      console.error('❌ ClassroomsView - Error fetching classrooms:', err);
+      setError('Failed to fetch classrooms. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchClassrooms(); }, []);
+  useEffect(() => { fetchClassrooms(); }, []); // ✅ classroomAPI is stable, so no need to add it to dependencies
 
-  // Debug search - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Debug search
   useEffect(() => {
     console.log('🔍 Classrooms Search Debug:', {
       searchTerm,
@@ -62,23 +68,29 @@ const ClassroomsView = ({ searchTerm, searchResults }) => {
     e.preventDefault();
     setLoading(true);
     try {
+      console.log('💾 ClassroomsView - Saving classroom:', editingClassroom ? 'update' : 'create');
+
       if (editingClassroom) {
         await classroomAPI.update(editingClassroom._id, formData);
+        console.log('✅ ClassroomsView - Classroom updated successfully');
       } else {
         await classroomAPI.create(formData);
+        console.log('✅ ClassroomsView - Classroom created successfully');
       }
+      
       await fetchClassrooms();
       resetForm();
       setIsModalOpen(false);
     } catch (err) {
-      setError('Failed to save classroom');
-      console.error('Error saving classroom:', err);
+      console.error('❌ ClassroomsView - Error saving classroom:', err);
+      setError('Failed to save classroom. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEdit = (classroom) => {
+    console.log('✏️ ClassroomsView - Editing classroom:', classroom._id);
     setEditingClassroom(classroom);
     setFormData({
       name: classroom.name,
@@ -93,11 +105,13 @@ const ClassroomsView = ({ searchTerm, searchResults }) => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this classroom?')) {
       try {
+        console.log('🗑️ ClassroomsView - Deleting classroom:', id);
         await classroomAPI.delete(id);
+        console.log('✅ ClassroomsView - Classroom deleted successfully');
         await fetchClassrooms();
       } catch (err) {
-        setError('Failed to delete classroom');
-        console.error('Error deleting classroom:', err);
+        console.error('❌ ClassroomsView - Error deleting classroom:', err);
+        setError('Failed to delete classroom. Please try again.');
       }
     }
   };
@@ -114,11 +128,12 @@ const ClassroomsView = ({ searchTerm, searchResults }) => {
   };
 
   const openCreateModal = () => {
+    console.log('➕ ClassroomsView - Opening create modal');
     resetForm();
     setIsModalOpen(true);
   };
 
-  // Use filtered classrooms for display - EXACT SAME PATTERN AS STUDENTSVIEW
+  // Use filtered classrooms for display
   const displayClassrooms = searchTerm ? filteredClassrooms : classrooms;
 
   return (
@@ -142,7 +157,7 @@ const ClassroomsView = ({ searchTerm, searchResults }) => {
         </button>
       </div>
 
-      {/* Search Status - EXACT SAME PATTERN AS STUDENTSVIEW */}
+      {/* Search Status */}
       {searchTerm && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center justify-between">
@@ -158,7 +173,18 @@ const ClassroomsView = ({ searchTerm, searchResults }) => {
         </div>
       )}
 
-      {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">{error}</div>)}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+          <button 
+            onClick={() => setError('')}
+            className="float-right text-red-800 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading && !isModalOpen && (
         <div className="text-center py-8">
