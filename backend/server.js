@@ -61,12 +61,16 @@ app.use((req, res, next) => {
 // Security middleware
 app.use(securityMiddleware);
 
-// CORS middleware (Production ready)
+// CORS middleware (Production ready with Vercel support)
 const allowedOrigins = [
   'http://localhost:5173', 
   'http://127.0.0.1:5173',
+  // Vercel domains
+  'https://scholalink.vercel.app',
+  'https://scholalink-git-*.vercel.app', // For preview deployments
+  'https://*.vercel.app',
   ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [])
-].filter(origin => origin.trim());
+].filter(origin => origin && origin.trim());
 
 console.log('🌐 CORS Allowed Origins:', allowedOrigins);
 
@@ -75,12 +79,20 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `🚫 CORS blocked for origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`;
-      console.warn(msg);
-      return callback(new Error(msg), false);
+    // Check exact matches first
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    // Check wildcard matches for Vercel preview deployments
+    if (origin.endsWith('.vercel.app')) {
+      console.log('✅ Allowing Vercel preview deployment:', origin);
+      return callback(null, true);
+    }
+    
+    const msg = `🚫 CORS blocked for origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`;
+    console.warn(msg);
+    return callback(new Error(msg), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
