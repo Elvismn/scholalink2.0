@@ -1,5 +1,6 @@
 const Student = require("../models/student");
 
+
 // Create a new student
 const createStudent = async (req, res) => {
   try {
