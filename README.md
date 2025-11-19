@@ -29,6 +29,8 @@ In short:
 
 ---
 
+You can Access the Application from https://scholalink.vercel.app/
+
 ## 🌍 **Alignment With SDG 4 — Quality Education**
 
 Scholalink 2.0 directly supports the UN Sustainable Development Goal 4 (Quality Education) by:

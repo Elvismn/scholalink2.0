@@ -2,7 +2,7 @@
 
 A modern React-based frontend application for the Scholalink 2.0 school management system. Built with Vite for fast development, featuring a responsive UI with Tailwind CSS and Radix UI components, integrated authentication via Clerk, and comprehensive views for managing school entities.
 
-The project frontend is live at https://scholalink2-0-kyfe.vercel.app/
+The project frontend is live at https://scholalink.vercel.app/
 ## Features
 
 - **Authentication**: Seamless login and user management with Clerk
